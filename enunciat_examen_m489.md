@@ -4,11 +4,11 @@
 
 **Unitats Formatives:** RA2 i RA3  
 **Curs:** 2n DAM · Videojocs  
-**Data:** ____________________  
+**Data:** 23/03/2026  
 **Durada:** 2 hores  
 
-**Alumne/a:** ________________________________________________  
-**Grup:** __________________________________________________  
+**Alumne/a:** Uxue Esteve  
+**Grup:** 2n DAM  
 
 ---
 
@@ -42,7 +42,11 @@ Al projecte **Cars**, el widget `CarsPage` gestiona el número de pàgina actual
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+setState serveix per dir-li a Flutter que alguna cosa ha canviat en el widget i que cal tornar-lo a dibuixar. Així, la pantalla es refresca amb les noves dades. 
+A _loadPage() es fan dues crides a setState perquè passen dues coses diferents:  
+Al començar, per indicar que s’estan carregant les dades i mostrar un indicador de càrrega.  
+Al final, quan les dades ja han arribat, per actualitzar la llista i amagar l’indicador.  
+Si només es fes una crida al final, l’usuari no veuria que la informació s’està carregant, i l’experiència seria pitjor.
 ```
 
 ---
@@ -56,7 +60,12 @@ Al projecte **Camera**, el widget `CameraScreen` utilitza un `CameraController` 
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+@override
+void dispose() {
+  _cameraController.dispose();
+  super.dispose();
+}
+Es necesario llamar a dispose() para liberar la cámara y la memoria que usa. Si no se hace, la app podría usar recursos de más o bloquear la cámara para otras apps.
 ```
 
 ---
@@ -70,7 +79,10 @@ Al projecte **Camera**, el widget `CameraScreen` utilitza un `CameraController` 
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+No es pot fer await a initState() perquè aquest mètode ha de ser ràpid i no pot ser asíncron.
+S’utilitza FutureBuilder per no bloquejar la pantalla mentre es prepara la càmera. Així es pot mostrar un loading (CircularProgressIndicator) fins que tot estigui llest.
+_initializeControllerFuture guarda l’estat de la inicialització. El FutureBuilder mira aquest futur i reconstrueix la UI: mostra el loading mentre espera, la càmera quan acaba i un missatge si hi ha un error.
+
 ```
 
 ---
@@ -87,11 +99,34 @@ Què passaria si el servidor de l'API trigués 60 segons a respondre? L'aplicaci
 
 ```dart
 // Escriu la modificació al getCarsPage aquí:
-Future<List<CarsModel>> getCarsPage(int page, int limit) async {
-  // ...
-}
+Future<List<CarsModel>> getCarsPage(int page int limit) Future<List<CarsModel>> getCarsPage(int page int limit) async
+  try 
+    // Construïm la URI amb els paràmetres de pàgina i límit
+    final uri = _buildUri('/v1/cars', {
+      'page' page.toString() // Número de pàgina
+      'limit' limit.toString() // Màxim de resultats per pàgina
+    })
+    // Fem la petició HTTP amb un timeout de 10 segons
+    final response = await http.get(uri).timeout(Duration(seconds 10))
+    // Comprovem si la resposta és correcta
+    if response.statusCode = 200
+      // Decodifiquem el JSON rebut
+      final data = jsonDecode(response.body)
+      // Obtenim la llista de cotxes del camp 'data'
+      final List carsJson = data['data']
+      // Convertim cada mapa en un objecte CarsModel
+      return carsJson.map((e) => CarsModel.fromMapToCarObject(e)).toList()
+    else 
+      // Si el servidor retorna error, llençar excepció
+      throw Exception('Error del servidor ${response.statusCode}')
+  // Captura de TimeoutException si la petició triga massa
+  on TimeoutException
+    throw Exception('La petició ha trigat massa')
+  // Captura de qualsevol altre error
+  catch(e)
+    throw Exception('Error en la petició $e')
 ```
-
+La app no se queda bloqueada porque await deja que otras cosas sigan funcionando mientras se esperan los datos. Si tarda demasiado, usamos un límite de 10 segundos para que aparezca un error y el usuario no quede esperando sin saber qué pasa.
 ---
 
 ### Pregunta 2.2 – Models de dades  *(17 punts)*
@@ -103,9 +138,8 @@ Analitza el constructor `factory CarsModel.fromMapToCarObject(Map<String, dynami
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
-```
-
+year: int.tryParse(json['year'].toString()) ?? 0
+  ```
 ---
 
 **b)** Al fitxer `class_model_test.dart`, el test utilitza un `const jsonString` amb un JSON escrit a mà en lloc de fer una petició real a l'API de RapidAPI. Explica per quin motiu és millor simular el JSON en un test unitari.
@@ -113,7 +147,7 @@ Analitza el constructor `factory CarsModel.fromMapToCarObject(Map<String, dynami
 **Resposta:**
 
 ```
-[Escriu la teva resposta aquí]
+És millor simular el JSON en un test perquè així els tests funcionen sempre, són més ràpids i no depenen que l’API estigui en línia. També permet provar situacions concretes, com errors o dades estranyes, de manera segura.
 ```
 
 ---
@@ -134,16 +168,41 @@ Imagina que volem crear una pantalla de detall per a cada cotxe del projecte Car
 ```dart
 // Escriu el teu codi aquí:
 
-class CarDetailPage extends StatelessWidget {
-  final CarsModel car;
-
-  const CarDetailPage({super.key, required this.car});
-
+class CarDetailPage extends StatelessWidget
+  // Paràmetre que rep el cotxe a mostrar
+  final CarsModel car
+  // Constructor amb la clau i el cotxe obligatori
+  const CarDetailPage({super.key required this.car})
   @override
-  Widget build(BuildContext context) {
-    // implementa aquí
-  }
-}
+  Widget build(context) 
+    // Scaffold principal de la pàgina
+    return Scaffold(
+      // Barra superior amb títol
+      appBar AppBar(title Text('Detall del cotxe'))
+      // Cos de la pàgina amb padding
+      body Padding(
+        padding EdgeInsets.all(16)
+        child Column(
+          crossAxisAlignment CrossAxisAlignment.start
+         children [
+            // Títol amb marca i model del cotxe
+            Text('${car.make} ${car.model}'
+              style TextStyle(fontSize 24, fontWeight FontWeight.bold))
+            // Espai vertical
+            SizedBox(height 16)
+            // Icona condicional segons tipus de cotxe
+            Icon(car.type = 'SUV' ? Icons.directions_car : Icons.car_rental size 50)
+            // Nou espai vertical
+         SizedBox(height 16)
+         // Botó per seleccionar el cotxe
+       ElevatedButton(
+          onPressed () {
+            // Mostrem un SnackBar amb informació del cotxe seleccionat
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content Text('Cotxe seleccionat: ${car.make} ${car.model}'))) }
+          // Text del botó
+          child Text('Seleccionar')),),],),),);}}
+
 ```
 
 ---
@@ -152,6 +211,31 @@ class CarDetailPage extends StatelessWidget {
 
 ```dart
 //Escriu la teva ampliació aquí:
+FutureBuilder<List<CarsModel>>(
+  // Futur que obté la pàgina 1 amb 5 cotxes
+  future: CarHttpService().getCarsPage(1, 5),
+  // Builder que reconstrueix la UI depenent de l'estat del futur
+  builder: (BuildContext context, AsyncSnapshot<List<CarsModel>> snapshot) {
+    // Si encara no hi ha dades
+    if (!snapshot.hasData) {
+      // Mostrem indicador de càrrega
+      return Center(child: CircularProgressIndicator());}
+    // Si hi ha un error
+    if (snapshot.hasError) {
+      // Mostrem missatge d'error en vermell
+      return Text(
+        'Ha succeït un error: ${snapshot.error}',
+        style: TextStyle(color: Colors.red),);}
+    // Guardem les dades retornades pel futur
+    final cars = snapshot.data!;
+    // Si la llista està buida
+    if (cars.isEmpty) {
+      // Mostrem missatge indicant que no hi ha cotxes
+      return Text('No s’han trobat cotxes');}
+    // Mostrem la llista de cotxes
+    return ListView(
+      // Convertim cada cotxe en un ListTile amb el seu 'make'
+      children: cars.map((car) => ListTile(title: Text(car.make))).toList(),);},)
 ```
 
 ---
@@ -180,6 +264,33 @@ Exemples vàlids:
 
 ```dart
 // Afegeix aquest mètode a car_http_service.dart:
+Future<List<CarsModel>> getCarsByFilter({String? make, String? model}) async
+  try 
+    // Creem un mapa buit per guardar els paràmetres de la URL
+    final params = <String, String>{}
+    // Afegim el paràmetre 'make' si no és nul ni buit
+    if make != null && make.isNotEmpty params['make'] = make
+    // Afegim el paràmetre 'model' si no és nul ni buit
+    if model != null && model.isNotEmpty params['model'] = model
+    // Construïm la URI amb el path i els paràmetres
+    final uri = _buildUri('/v1/cars/search', params)
+    // Fem la petició HTTP GET amb un timeout de 10 segons
+    final response = await http.get(uri).timeout(Duration(seconds: 10)
+    // Comprovem si la resposta del servidor és correcta
+    if response.statusCode == 200
+      // Decodifiquem el JSON i extraiem la llista de cotxes
+      final data = jsonDecode(response.body)['data'] as List
+      // Convertim cada element a un objecte CarsModel
+      return data.map((c) => CarsModel.fromMapToCarObject(c)).toList()
+    else
+      // Llancem una excepció si el servidor retorna un codi diferent de 200
+      throw Exception('Error del servidor (${response.statusCode}')
+  // Capturem el TimeoutException si la petició triga massa
+  on TimeoutException
+    throw Exception('La petició ha trigat massa')
+  // Capturem qualsevol altre error inesperat
+  catch e
+    throw Exception('Ha succeït un error: $e')
 ```
 
 Requisits:
@@ -193,6 +304,36 @@ Requisits:
 ```dart
 // Escriu aquí la teva implementació completa del mètode:
 
+FFuture<List<CarsModel>> getCarsByFilter({
+  String? make,
+  String? model,
+}) async {
+  try
+    // Creem un mapa buit per als paràmetres de la URL
+    final params = <String, String>{}
+    // Si make té valor, l’afegim als paràmetres
+    if make?.isNotEmpty ?? false params['make'] = make
+    // Si model té valor, l’afegim als paràmetres
+    if model?.isNotEmpty ?? false params['model'] = model
+    // Construïm la URI completa amb els paràmetres
+    final uri = _buildUri('/v1/cars/search', params)
+    // Fem la petició GET amb un timeout de 10 segons
+    final response = await http.get(uri).timeout(Duration(seconds: 10)
+    // Si la resposta és correcta (codi 200)
+    if response.statusCode == 200 {
+      // Decodifiquem el JSON i extraiem la llista de cotxes
+      final carsData = jsonDecode(response.body)['data'] as List
+      // Convertim cada element a un objecte CarsModel
+      return carsData.map((c) => CarsModel.fromMapToCarObject(c)).toList()
+    } else
+      // Llancem excepció si el servidor retorna un altre codi
+      throw Exception('Servidor va respondre amb codi ${response.statusCode}')
+  // Capturem el timeout i llancem excepció personalitzada
+  on TimeoutException 
+    throw Exception('La petició ha trigat massa timeout')
+  // Capturem qualsevol altre error
+  catch e {
+    throw Exception('Ha succeït un error: $e')}
 ```
 
 ---
